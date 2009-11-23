@@ -8,7 +8,7 @@ Install
 
 Specify it in your Rails config.
 
-	config.gem 'ryanb-acts-as-list', :lib => 'acts_as_list', :source => 'http://gems.github.com'
+	config.gem 'acts_as_list'
 
 Then install it.
 
