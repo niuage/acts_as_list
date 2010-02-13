@@ -6,7 +6,7 @@ require 'active_record'
 
 require "#{File.dirname(__FILE__)}/../lib/acts_as_list"
 
-ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
+ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :database => ":memory:")
 
 def setup_db
   ActiveRecord::Schema.define(:version => 1) do
