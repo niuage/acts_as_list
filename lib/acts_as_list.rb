@@ -40,7 +40,7 @@ module ActsAsList
             if #{configuration[:scope].to_s}.nil?
               "#{configuration[:scope].to_s} IS NULL"
             else
-              "#{configuration[:scope].to_s} = \#{#{connection.quote configuration[:scope].to_s}}"
+              "#{configuration[:scope].to_s} = \#{#{configuration[:scope].to_s}}"
             end
           end
         )
@@ -249,7 +249,7 @@ module ActsAsList
         self.update_attribute(position_column, position)
       end
 
-      def eliminate_current_position          
+      def eliminate_current_position
         decrement_positions_on_lower_items if in_list?
       end
   end

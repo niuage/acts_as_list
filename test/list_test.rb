@@ -32,7 +32,7 @@ class ListMixin < Mixin
   acts_as_list :column => "pos", :scope => :parent
 
   def self.table_name() "mixins" end
-    
+
   attr_accessor :before_save_triggered
   before_save :log_before_save
 
@@ -42,7 +42,6 @@ class ListMixin < Mixin
 end
 
 class ListMixinSub1 < ListMixin
-
 end
 
 class ListMixinSub2 < ListMixin
@@ -195,47 +194,46 @@ class ListTest < Test::Unit::TestCase
     new2.move_higher
     assert_equal [new2, new1, new3], ListMixin.find(:all, :conditions => 'parent_id IS NULL', :order => 'pos')
   end
-  
-  
+
   def test_remove_from_list_should_then_fail_in_list? 
     assert_equal true, ListMixin.find(1).in_list?
     ListMixin.find(1).remove_from_list
     assert_equal false, ListMixin.find(1).in_list?
   end 
-  
+
   def test_remove_from_list_should_set_position_to_nil 
     assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
-  
+
     ListMixin.find(2).remove_from_list 
-  
+
     assert_equal [2, 1, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
-  
+
     assert_equal 1,   ListMixin.find(1).pos
     assert_equal nil, ListMixin.find(2).pos
     assert_equal 2,   ListMixin.find(3).pos
     assert_equal 3,   ListMixin.find(4).pos
   end 
-  
+
   def test_remove_before_destroy_does_not_shift_lower_items_twice 
     assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
-  
+
     ListMixin.find(2).remove_from_list 
     ListMixin.find(2).destroy 
-  
+
     assert_equal [1, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
-  
+
     assert_equal 1, ListMixin.find(1).pos
     assert_equal 2, ListMixin.find(3).pos
     assert_equal 3, ListMixin.find(4).pos
   end
-  
+
   def test_should_not_trigger_unexpected_callbacks_on_destroy
     element = ListMixin.find(2)
     assert !element.before_save_triggered
     element.destroy
     assert !element.before_save_triggered
   end
-  
+
   # special thanks to openhood on github
   def test_delete_middle_with_holes
     # first we check everything is at expected place
@@ -322,7 +320,7 @@ class ListSubTest < Test::Unit::TestCase
   end
 
   def test_injection
-    item = ListMixin.new("parent_id"=>1)
+    item = ListMixin.new("parent_id" => 1)
     assert_equal "parent_id = 1", item.scope_condition
     assert_equal "pos", item.position_column
   end
