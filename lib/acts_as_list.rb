@@ -61,7 +61,7 @@ module ActsAsList
 
         #{scope_condition_method}
 
-        before_destroy :remove_from_list
+        before_destroy :eliminate_current_position
         before_create  :add_to_list_bottom
       EOV
     end
@@ -247,6 +247,10 @@ module ActsAsList
         remove_from_list
         increment_positions_on_lower_items(position)
         self.update_attribute(position_column, position)
+      end
+
+      def eliminate_current_position          
+        decrement_positions_on_lower_items if in_list?
       end
   end
 end
