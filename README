@@ -1,16 +1,32 @@
-ActsAsList
-==========
+Acts As List
+============
 
-This acts_as extension provides the capabilities for sorting and reordering a number of objects in a list. The class that has this specified needs to have a +position+ column defined as an integer on the mapped database table.
+This acts_as extension provides the capabilities for sorting and reordering a
+number of objects in a list. The class that has this specified needs to have a
++position+ column defined as an integer on the mapped database table.
 
 Install
 =======
 
-Specify it in your Rails config.
+Rails 3
+-------
 
-	config.gem 'acts_as_list'
+Specify it in your Rails Gemfile:
 
-Then install it.
+    gem "acts-as-list"
+
+Then install it:
+
+    bundle install
+
+Rails 2
+-------
+
+Specify it in your Rails config:
+
+	config.gem "acts_as_list", "~>0.1"
+
+Then install it:
 
   rake gems:install
 
@@ -32,3 +48,4 @@ Example
 
 
 Copyright (c) 2007 David Heinemeier Hansson, released under the MIT license
+
