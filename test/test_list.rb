@@ -1,4 +1,4 @@
-require 'test/test_helper'
+require 'test/helper'
 
 class ListTest < Test::Unit::TestCase
   def setup
