@@ -3,7 +3,7 @@ require 'test/helper'
 class ListTest < Test::Unit::TestCase
   def setup
     setup_db
-    (1..4).each { |counter| ListMixin.create! :pos => counter, :parent_id => 5 }
+    (1..4).each { |counter| ListMixin.create! :pos => counter, :parent_id => 5000 }
   end
 
   def teardown
@@ -11,31 +11,31 @@ class ListTest < Test::Unit::TestCase
   end
 
   def test_reordering
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(2).move_lower
-    assert_equal [1, 3, 2, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 3, 2, 4], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(2).move_higher
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(1).move_to_bottom
-    assert_equal [2, 3, 4, 1], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [2, 3, 4, 1], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(1).move_to_top
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(2).move_to_bottom
-    assert_equal [1, 3, 4, 2], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 3, 4, 2], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(4).move_to_top
-    assert_equal [4, 1, 3, 2], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [4, 1, 3, 2], ListMixin.by_pos_5000.map(&:id)
   end
 
   def test_move_to_bottom_with_next_to_last_item
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
     ListMixin.find(3).move_to_bottom
-    assert_equal [1, 2, 4, 3], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 4, 3], ListMixin.by_pos_5000.map(&:id)
   end
 
   def test_next_prev
@@ -109,11 +109,11 @@ class ListTest < Test::Unit::TestCase
   end
 
   def test_delete_middle
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(2).destroy
 
-    assert_equal [1, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     assert_equal 1, ListMixin.find(1).pos
     assert_equal 2, ListMixin.find(3).pos
@@ -121,14 +121,14 @@ class ListTest < Test::Unit::TestCase
 
     ListMixin.find(1).destroy
 
-    assert_equal [3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [3, 4], ListMixin.by_pos_5000.map(&:id)
 
     assert_equal 1, ListMixin.find(3).pos
     assert_equal 2, ListMixin.find(4).pos
   end
 
   def test_with_string_based_scope
-    new = ListWithStringScopeMixin.create(:parent_id => 500)
+    new = ListWithStringScopeMixin.create(:parent_id => 42)
     assert_equal 1, new.pos
     assert new.first?
     assert new.last?
@@ -137,7 +137,7 @@ class ListTest < Test::Unit::TestCase
   def test_nil_scope
     new1, new2, new3 = ListMixin.create, ListMixin.create, ListMixin.create
     new2.move_higher
-    assert_equal [new2, new1, new3], ListMixin.find(:all, :conditions => 'parent_id IS NULL', :order => 'pos')
+    assert_equal [new2, new1, new3], ListMixin.where('parent_id IS NULL').order('pos').all
   end
 
   def test_remove_from_list_should_then_fail_in_list? 
@@ -147,11 +147,11 @@ class ListTest < Test::Unit::TestCase
   end 
 
   def test_remove_from_list_should_set_position_to_nil 
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(2).remove_from_list 
 
-    assert_equal [2, 1, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [2, 1, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     assert_equal 1,   ListMixin.find(1).pos
     assert_equal nil, ListMixin.find(2).pos
@@ -160,12 +160,12 @@ class ListTest < Test::Unit::TestCase
   end 
 
   def test_remove_before_destroy_does_not_shift_lower_items_twice 
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     ListMixin.find(2).remove_from_list 
     ListMixin.find(2).destroy 
 
-    assert_equal [1, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     assert_equal 1, ListMixin.find(1).pos
     assert_equal 2, ListMixin.find(3).pos
@@ -182,14 +182,14 @@ class ListTest < Test::Unit::TestCase
   # special thanks to openhood on github
   def test_delete_middle_with_holes
     # first we check everything is at expected place
-    assert_equal [1, 2, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 2, 3, 4], ListMixin.by_pos_5000.map(&:id)
 
     # then we create a hole in the list, say you're working with existing data in which you already have holes
     # or your scope is very complex
     ListMixin.delete(2)
 
     # we ensure the hole is really here
-    assert_equal [1, 3, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [1, 3, 4], ListMixin.by_pos_5000.map(&:id)
     assert_equal 1, ListMixin.find(1).pos
     assert_equal 3, ListMixin.find(3).pos
     assert_equal 4, ListMixin.find(4).pos
@@ -199,7 +199,7 @@ class ListTest < Test::Unit::TestCase
 
     # can we move an item lower jumping more than one position?
     ListMixin.find(1).move_lower
-    assert_equal [3, 1, 4], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [3, 1, 4], ListMixin.by_pos_5000.map(&:id)
     assert_equal 2, ListMixin.find(3).pos
     assert_equal 3, ListMixin.find(1).pos
     assert_equal 4, ListMixin.find(4).pos
@@ -212,7 +212,7 @@ class ListTest < Test::Unit::TestCase
 
     # can we move an item higher jumping more than one position?
     ListMixin.find(4).move_higher
-    assert_equal [4, 3], ListMixin.find(:all, :conditions => 'parent_id = 5', :order => 'pos').map(&:id)
+    assert_equal [4, 3], ListMixin.by_pos_5000.map(&:id)
     assert_equal 2, ListMixin.find(4).pos
     assert_equal 3, ListMixin.find(3).pos
   end

@@ -51,10 +51,6 @@ module ActsAsList
       class_eval <<-EOV
         include ActsAsList::InstanceMethods
 
-        def acts_as_list_class
-          self.class
-        end
-
         def position_column
           '#{configuration[:column]}'
         end
@@ -81,7 +77,7 @@ module ActsAsList
     def move_lower
       lower = lower_item
       return unless lower
-      acts_as_list_class.transaction do
+      self.class.transaction do
         self.update_attribute(position_column, lower.send(position_column))
         lower.decrement_position
       end
@@ -91,7 +87,7 @@ module ActsAsList
     def move_higher
       higher = higher_item
       return unless higher
-      acts_as_list_class.transaction do
+      self.class.transaction do
         self.update_attribute(position_column, higher.send(position_column))
         higher.increment_position
       end
@@ -101,7 +97,7 @@ module ActsAsList
     # position adjusted accordingly.
     def move_to_bottom
       return unless in_list?
-      acts_as_list_class.transaction do
+      self.class.transaction do
         decrement_positions_on_lower_items
         assume_bottom_position
       end
@@ -111,7 +107,7 @@ module ActsAsList
     # position adjusted accordingly.
     def move_to_top
       return unless in_list?
-      acts_as_list_class.transaction do
+      self.class.transaction do
         increment_positions_on_higher_items
         assume_top_position
       end
@@ -152,17 +148,17 @@ module ActsAsList
     # Return the next higher item in the list.
     def higher_item
       return nil unless in_list?
-      acts_as_list_class.find(:first, :conditions =>
-        "#{scope_condition} AND #{position_column} < #{send(position_column).to_s}", :order => "#{position_column} DESC"
-      )
+      self.class.where(scope_condition).
+                 where("#{position_column} < #{send(position_column).to_s}").
+                 order("#{position_column} DESC").first
     end
 
     # Return the next lower item in the list.
     def lower_item
       return nil unless in_list?
-      acts_as_list_class.find(:first, :conditions =>
-        "#{scope_condition} AND #{position_column} > #{send(position_column).to_s}", :order => "#{position_column} ASC"
-      )
+      self.class.where(scope_condition).
+                 where("#{position_column} > #{send(position_column).to_s}").
+                 order("#{position_column} ASC").first
     end
 
     # Test if this record is in a list
@@ -170,88 +166,89 @@ module ActsAsList
       !send(position_column).nil?
     end
 
-    private
-      def add_to_list_top
-        increment_positions_on_all_items
-      end
+  private
 
-      def add_to_list_bottom
-        self[position_column] = bottom_position_in_list.to_i + 1
-      end
+    def add_to_list_top
+      increment_positions_on_all_items
+    end
 
-      # Overwrite this method to define the scope of the list changes
-      def scope_condition() "1" end
+    def add_to_list_bottom
+      self[position_column] = bottom_position_in_list.to_i + 1
+    end
 
-      # Returns the bottom position number in the list.
-      #   bottom_position_in_list    # => 2
-      def bottom_position_in_list(except = nil)
-        item = bottom_item(except)
-        item ? item.send(position_column) : 0
-      end
+    # Overwrite this method to define the scope of the list changes
+    def scope_condition() "1" end
 
-      # Returns the bottom item
-      def bottom_item(except = nil)
-        conditions = scope_condition
-        conditions = "#{conditions} AND #{self.class.primary_key} != #{except.id}" if except
-        acts_as_list_class.find(:first, :conditions => conditions, :order => "#{position_column} DESC")
-      end
+    # Returns the bottom position number in the list.
+    #   bottom_position_in_list    # => 2
+    def bottom_position_in_list(except = nil)
+      item = bottom_item(except)
+      item ? item.send(position_column) : 0
+    end
 
-      # Forces item to assume the bottom position in the list.
-      def assume_bottom_position
-        update_attribute(position_column, bottom_position_in_list(self).to_i + 1)
-      end
+    # Returns the bottom item
+    def bottom_item(except = nil)
+      conditions = scope_condition
+      conditions = "#{conditions} AND #{self.class.primary_key} != #{except.id}" if except
+      self.class.where(conditions).order("#{position_column} DESC").first
+    end
 
-      # Forces item to assume the top position in the list.
-      def assume_top_position
-        update_attribute(position_column, 1)
-      end
+    # Forces item to assume the bottom position in the list.
+    def assume_bottom_position
+      update_attribute(position_column, bottom_position_in_list(self).to_i + 1)
+    end
 
-      # This has the effect of moving all the higher items up one.
-      def decrement_positions_on_higher_items(position)
-        acts_as_list_class.update_all(
-          "#{position_column} = (#{position_column} - 1)", "#{scope_condition} AND #{position_column} <= #{position}"
-        )
-      end
+    # Forces item to assume the top position in the list.
+    def assume_top_position
+      update_attribute(position_column, 1)
+    end
 
-      # This has the effect of moving all the lower items up one.
-      def decrement_positions_on_lower_items
-        return unless in_list?
-        acts_as_list_class.update_all(
-          "#{position_column} = (#{position_column} - 1)", "#{scope_condition} AND #{position_column} > #{send(position_column).to_i}"
-        )
-      end
+    # This has the effect of moving all the higher items up one.
+    def decrement_positions_on_higher_items(position)
+      self.class.update_all(
+        "#{position_column} = (#{position_column} - 1)", "#{scope_condition} AND #{position_column} <= #{position}"
+      )
+    end
 
-      # This has the effect of moving all the higher items down one.
-      def increment_positions_on_higher_items
-        return unless in_list?
-        acts_as_list_class.update_all(
-          "#{position_column} = (#{position_column} + 1)", "#{scope_condition} AND #{position_column} < #{send(position_column).to_i}"
-        )
-      end
+    # This has the effect of moving all the lower items up one.
+    def decrement_positions_on_lower_items
+      return unless in_list?
+      self.class.update_all(
+        "#{position_column} = (#{position_column} - 1)", "#{scope_condition} AND #{position_column} > #{send(position_column).to_i}"
+      )
+    end
 
-      # This has the effect of moving all the lower items down one.
-      def increment_positions_on_lower_items(position)
-        acts_as_list_class.update_all(
-          "#{position_column} = (#{position_column} + 1)", "#{scope_condition} AND #{position_column} >= #{position}"
-       )
-      end
+    # This has the effect of moving all the higher items down one.
+    def increment_positions_on_higher_items
+      return unless in_list?
+      self.class.update_all(
+        "#{position_column} = (#{position_column} + 1)", "#{scope_condition} AND #{position_column} < #{send(position_column).to_i}"
+      )
+    end
 
-      # Increments position (<tt>position_column</tt>) of all items in the list.
-      def increment_positions_on_all_items
-        acts_as_list_class.update_all(
-          "#{position_column} = (#{position_column} + 1)",  "#{scope_condition}"
-        )
-      end
+    # This has the effect of moving all the lower items down one.
+    def increment_positions_on_lower_items(position)
+      self.class.update_all(
+        "#{position_column} = (#{position_column} + 1)", "#{scope_condition} AND #{position_column} >= #{position}"
+     )
+    end
 
-      def insert_at_position(position)
-        remove_from_list
-        increment_positions_on_lower_items(position)
-        self.update_attribute(position_column, position)
-      end
+    # Increments position (<tt>position_column</tt>) of all items in the list.
+    def increment_positions_on_all_items
+      self.class.update_all(
+        "#{position_column} = (#{position_column} + 1)",  "#{scope_condition}"
+      )
+    end
 
-      def eliminate_current_position
-        decrement_positions_on_lower_items if in_list?
-      end
+    def insert_at_position(position)
+      remove_from_list
+      increment_positions_on_lower_items(position)
+      self.update_attribute(position_column, position)
+    end
+
+    def eliminate_current_position
+      decrement_positions_on_lower_items if in_list?
+    end
   end
 end
 

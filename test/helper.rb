@@ -1,10 +1,11 @@
 require 'test/unit'
 
 require 'rubygems'
-gem 'activerecord', '>= 1.15.4.7794'
+gem 'activerecord', '>= 3.0.pre'
 require 'active_record'
 
 require "#{File.dirname(__FILE__)}/../lib/acts_as_list"
+
 
 ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :database => ":memory:")
 
@@ -30,11 +31,17 @@ def teardown_db
   end
 end
 
+
+# The +scope+ needs that the connection to the database is established!
+setup_db
+
 class Mixin < ActiveRecord::Base
 end
 
 class ListMixin < Mixin
   acts_as_list :column => "pos", :scope => :parent
+
+  scope :by_pos_5000, where(:parent_id => 5000).order(:pos)
 
   def self.table_name() "mixins" end
 
@@ -69,3 +76,5 @@ end
 
 class StiMixinSub2 < StiMixin
 end
+
+teardown_db
