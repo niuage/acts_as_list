@@ -11,7 +11,7 @@ number of objects in a list. The class that has this specified needs to have a
 
 Specify it in your Rails Gemfile:
 
-    gem "acts-as-list"
+    gem "acts_as_list"
 
 Then install it:
 
