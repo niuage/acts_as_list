@@ -63,7 +63,7 @@ module ActsAsList
         #{scope_condition_method}
 
         before_destroy :eliminate_current_position
-        before_create  :add_to_list_bottom
+        before_create  :add_to_list_top
       EOV
     end
   end
