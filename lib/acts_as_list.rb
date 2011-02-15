@@ -52,7 +52,8 @@ module ActsAsList
         include ActsAsList::InstanceMethods
 
         def acts_as_list_class
-          self.class
+          klass = self.class
+          klass < Container ? Container : klass
         end
 
         def position_column
